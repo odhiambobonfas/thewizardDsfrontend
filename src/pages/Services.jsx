@@ -156,12 +156,9 @@ const Services = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-medium transition-all duration-300 ${
                     selectedCategory === category.id
-                      ? 'bg-gradient-to-r from-primary-500 to-cyber-500 text-white shadow-lg glow-button'
-                      : 'bg-white/80 dark:bg-dark-800/80 text-dark-600 dark:text-dark-300 hover:bg-primary-50 dark:hover:bg-dark-700 glow-card backdrop-blur-sm'
+                      ? 'bg-primary-600 text-white shadow-lg'
+                      : 'bg-white/80 dark:bg-dark-800/80 text-dark-600 dark:text-dark-300 hover:bg-primary-50 dark:hover:bg-dark-700'
                   }`}
-                >
-                  {category.name} ({category.count})
-                </button>
               ))}
             </div>
           </motion.div>
@@ -228,10 +225,9 @@ const Services = () => {
                         {service.pricing.timeline}
                       </div>
                     </div>
-                    <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium flex items-center space-x-1 group">
-                      <span>Learn More</span>
-                      <FiArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                    </button>
+                    <Link to={`/services/${service.id}`} className="btn-primary text-sm">
+                      Learn More
+                    </Link>
                   </div>
                 </motion.div>
               );
@@ -305,7 +301,7 @@ const Services = () => {
               Contact us today for a free consultation and discover how we can help transform your digital presence.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <a href="/contact" className="glow-button bg-white text-primary-600 hover:bg-primary-50">
+              <a href="/contact" className="glow-button">
                 Get Free Consultation
               </a>
               <a href="/portfolio" className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white/50 text-white font-semibold rounded-lg hover:border-white hover:bg-white/10 transition-all duration-300 glow-card">

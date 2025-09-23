@@ -36,13 +36,13 @@ const About = () => {
       icon: FiZap,
       title: 'Engineering Excellence',
       description: 'We engineer beyond magic, delivering elegant solutions that exceed the highest standards.',
-      color: 'from-yellow-500 to-orange-500'
+      color: 'from-primary-500 to-cyber-500'
     },
     {
       icon: FiUsers,
       title: 'Enterprise Trust',
       description: 'Trusted by Fortune 500 companies for mission-critical security and development projects.',
-      color: 'from-pink-500 to-purple-500'
+      color: 'from-cyber-500 to-primary-500'
     },
     {
       icon: FiLock,
@@ -165,7 +165,7 @@ const About = () => {
                   className="inline-flex items-center px-4 py-2 glow-container rounded-full"
                 >
                   <FiZap className="w-4 h-4 mr-2 text-cyber-400 glow-icon" />
-                  <span className="text-sm font-medium text-primary-100">We Engineer Beyond Magic</span>
+                  <span className="text-sm font-medium text-primary-100">Security & Innovation, Engineered</span>
                 </motion.div>
 
                 <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
@@ -307,7 +307,7 @@ const About = () => {
                   <h3 className="text-xl font-bold text-dark-900 dark:text-white mb-2">
                     {member.name}
                   </h3>
-                  <p className="text-primary-600 dark:text-primary-400 font-semibold mb-3">
+                  <p className="text-dark-600 dark:text-dark-300 font-semibold mb-3">
                     {member.role}
                   </p>
                   <p className="text-sm text-dark-600 dark:text-dark-300 mb-4">

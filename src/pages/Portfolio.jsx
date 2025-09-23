@@ -166,12 +166,9 @@ const Portfolio = () => {
                     onClick={() => setActiveFilter(category.id)}
                     className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 ${
                       activeFilter === category.id
-                        ? 'bg-gradient-to-r from-primary-600 to-cyber-600 text-white shadow-lg glow-button'
-                        : 'bg-white/80 dark:bg-dark-800/80 text-dark-600 dark:text-dark-300 hover:bg-primary-50 dark:hover:bg-dark-700 glow-card backdrop-blur-sm'
+                        ? 'bg-primary-600 text-white shadow-lg'
+                        : 'bg-white/80 dark:bg-dark-800/80 text-dark-600 dark:text-dark-300 hover:bg-primary-50 dark:hover:bg-dark-700'
                     }`}
-                  >
-                    {category.label} ({category.count})
-                  </button>
                 ))}
               </div>
             )}
@@ -230,7 +227,7 @@ const Portfolio = () => {
                       {project.title}
                     </h3>
                     {project.client && (
-                      <p className="text-primary-600 dark:text-primary-400 text-sm font-medium mb-3">
+                      <p className="text-dark-600 dark:text-dark-300 text-sm font-medium mb-3">
                         Client: {project.client.name} • Duration: {project.duration || 'N/A'}
                       </p>
                     )}
@@ -305,10 +302,9 @@ const Portfolio = () => {
                           {project.analytics.views} views
                         </span>
                       )}
-                      <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium flex items-center space-x-1 group text-sm">
-                        <span>Learn More</span>
-                        <FiArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                      </button>
+                      <Link to={`/portfolio/${project.seo.slug}`} className="btn-primary text-sm">
+                        Learn More
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -387,7 +383,7 @@ const Portfolio = () => {
                   <div className="font-semibold text-dark-900 dark:text-white text-sm sm:text-base">
                     {testimonial.author}
                   </div>
-                  <div className="text-primary-600 dark:text-primary-400 text-xs sm:text-sm">
+                  <div className="text-dark-600 dark:text-dark-300 text-xs sm:text-sm">
                     {testimonial.role}
                   </div>
                 </div>
@@ -414,7 +410,7 @@ const Portfolio = () => {
               Let's discuss how we can help transform your digital presence with our proven expertise.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <a href="/contact" className="glow-button bg-white text-primary-600 hover:bg-primary-50">
+              <a href="/contact" className="glow-button">
                 Start Your Project
               </a>
               <a href="/services" className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white/50 text-white font-semibold rounded-lg hover:border-white hover:bg-white/10 transition-all duration-300 glow-card">
