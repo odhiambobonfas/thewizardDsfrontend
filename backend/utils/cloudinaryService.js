@@ -38,16 +38,52 @@ const upload = multer({
   }
 });
 
-// Upload single image
-const uploadImage = async (file) => {
+// Upload single image (supports both file path and buffer)
+const uploadImage = async (file, folder = 'thewizards-portfolio') => {
   try {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder: 'thewizards-portfolio',
+    let uploadOptions = {
+      folder: folder,
       transformation: [
         { width: 1200, height: 800, crop: 'limit', quality: 'auto' },
         { format: 'auto' }
       ]
-    });
+    };
+
+    let result;
+    
+    // Handle buffer upload (from multer memory storage)
+    if (Buffer.isBuffer(file)) {
+      result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          uploadOptions,
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(file);
+      });
+    }
+    // Handle file path upload
+    else if (file.path) {
+      result = await cloudinary.uploader.upload(file.path, uploadOptions);
+    }
+    // Handle buffer in file object
+    else if (file.buffer) {
+      result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          uploadOptions,
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(file.buffer);
+      });
+    }
+    else {
+      throw new Error('Invalid file format. Expected buffer or file path.');
+    }
 
     return {
       url: result.secure_url,

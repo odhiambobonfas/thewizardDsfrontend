@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -12,6 +13,11 @@ const contactRoutes = require('./routes/contact');
 const portfolioRoutes = require('./routes/portfolio');
 const serviceRoutes = require('./routes/services');
 const adminRoutes = require('./routes/admin');
+const teamRoutes = require('./routes/team');
+const testimonialRoutes = require('./routes/testimonials');
+const clientRoutes = require('./routes/clients');
+const jobRoutes = require('./routes/jobs');
+const applicationRoutes = require('./routes/applications');
 
 const app = express();
 
@@ -57,6 +63,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression middleware
 app.use(compression());
 
+// Serve static frontend files (add your frontend build or `public` folder here)
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -91,6 +100,11 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

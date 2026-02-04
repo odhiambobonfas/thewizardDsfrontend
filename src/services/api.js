@@ -1,5 +1,26 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+// Simple in-memory cache with TTL
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCacheKey = (endpoint, options) => {
+  return `${endpoint}:${JSON.stringify(options)}`;
+};
+
+const getFromCache = (key) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+};
+
+const setCache = (key, data) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
+
 // API configuration
 const apiConfig = {
   baseURL: API_BASE_URL,
@@ -23,7 +44,7 @@ const getAuthHeaders = () => {
   };
 };
 
-// Generic API request function
+// Generic API request function with caching
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${apiConfig.baseURL}${endpoint}`;
   
@@ -32,6 +53,15 @@ const apiRequest = async (endpoint, options = {}) => {
     headers: getAuthHeaders(),
     ...options,
   };
+
+  // Check cache for GET requests only
+  if (config.method === 'GET' && !options.skipCache) {
+    const cacheKey = getCacheKey(endpoint, options);
+    const cachedData = getFromCache(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+  }
 
   // Add body for non-GET requests
   if (config.body && typeof config.body === 'object') {
@@ -44,6 +74,12 @@ const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    }
+
+    // Cache successful GET requests
+    if (config.method === 'GET' && !options.skipCache) {
+      const cacheKey = getCacheKey(endpoint, options);
+      setCache(cacheKey, data);
     }
 
     return data;
@@ -261,12 +297,103 @@ export const withErrorHandling = (apiFunction) => {
   };
 };
 
+// Team API functions
+export const teamAPI = {
+  // Get all team members (public)
+  getAll: async () => {
+    return apiRequest('/team');
+  },
+
+  // Get single team member (public)
+  getById: async (id) => {
+    return apiRequest(`/team/${id}`);
+  },
+
+  // Create new team member (admin only)
+  create: async (memberData) => {
+    return apiRequest('/team', {
+      method: 'POST',
+      body: memberData,
+    });
+  },
+
+  // Update team member (admin only)
+  update: async (id, updateData) => {
+    return apiRequest(`/team/${id}`, {
+      method: 'PUT',
+      body: updateData,
+    });
+  },
+
+  // Delete team member (admin only)
+  delete: async (id) => {
+    return apiRequest(`/team/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Upload team member avatar (admin only)
+  uploadAvatar: async (id, imageFile) => {
+    const formData = new FormData();
+    formData.append('avatar', imageFile);
+
+    return apiRequest(`/team/${id}/avatar`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+      body: formData,
+    });
+  },
+
+  // Admin team management
+  admin: {
+    getAll: async (params = {}) => {
+      const queryString = new URLSearchParams(params).toString();
+      return apiRequest(`/team/admin/all${queryString ? `?${queryString}` : ''}`);
+    },
+    
+    create: async (formData) => {
+      const url = `${apiConfig.baseURL}/team`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+      return data;
+    },
+    
+    update: async (id, formData) => {
+      const url = `${apiConfig.baseURL}/team/${id}`;
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+      return data;
+    },
+  },
+};
+
 // Export default API object
 const api = {
   contact: contactAPI,
   portfolio: portfolioAPI,
   services: servicesAPI,
   admin: adminAPI,
+  team: teamAPI,
   health: healthAPI,
   handleError: handleAPIError,
   withErrorHandling,

@@ -1,18 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { 
   FiShield, 
   FiCode, 
-  FiLock, 
   FiGlobe, 
   FiExternalLink, 
   FiGithub,
   FiCheck,
   FiArrowRight,
   FiFilter,
-  FiStar
+  FiStar,
+  FiEye,
+  FiCalendar,
+  FiUser,
+  FiAward,
+  FiZap,
+  FiCpu,
+  FiSmartphone,
+  FiCloud
 } from 'react-icons/fi';
-import { portfolioAPI } from '../services/api';
+
+import CallToAction from '../sections/CallToAction';
+import heroImage from '../assets/images/3d-render-techno-background-with-male-figure-coding-design.jpg';
+import aiProfessionalImage from '../assets/images/african-american-it-professional-managing-ai-system-machine-learning.jpg';
+import devImage from '../assets/images/dev1.webp';
+import techCodeImage from '../assets/images/3d-render-technology-background-with-code-male-head.jpg';
+import cyberSecImage from '../assets/images/cyber.jpg';
 
 const Portfolio = () => {
   const [activeFilter, setActiveFilter] = useState('all');
@@ -20,75 +33,122 @@ const Portfolio = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [testimonials, setTestimonials] = useState([]);
 
+  // Fetch portfolio data from API
   useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  const fetchPortfolio = async () => {
-    try {
-      setLoading(true);
-      const response = await portfolioAPI.getAll();
-      if (response.success) {
-        setProjects(response.data.projects);
+    const fetchPortfolioData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
         
-        // Generate categories from projects
-        const categoryMap = {};
-        response.data.projects.forEach(project => {
-          if (categoryMap[project.category]) {
-            categoryMap[project.category]++;
-          } else {
-            categoryMap[project.category] = 1;
-          }
-        });
+        // Fetch all published projects
+        const response = await fetch('http://localhost:5000/api/portfolio?status=published');
+        const data = await response.json();
+        
+        if (data.success) {
+          setProjects(data.data.projects || []);
+          
+          // Extract unique categories
+          const uniqueCategories = [...new Set(data.data.projects.map(p => p.category))];
+          setCategories(uniqueCategories);
+          
+          // Generate categories from actual projects data
+          const categoryMap = {};
+          data.data.projects.forEach(project => {
+            if (categoryMap[project.category]) {
+              categoryMap[project.category]++;
+            } else {
+              categoryMap[project.category] = 1;
+            }
+          });
 
-        const generatedCategories = [
-          { id: 'all', label: 'All Projects', count: response.data.projects.length },
-          ...Object.entries(categoryMap).map(([key, count]) => ({
-            id: key,
-            label: key.charAt(0).toUpperCase() + key.slice(1),
-            count
-          }))
-        ];
+          const generatedCategories = [
+            { id: 'all', label: 'All Projects', count: data.data.projects.length, icon: FiGlobe },
+            { id: 'cybersecurity', label: 'Cybersecurity', count: categoryMap['cybersecurity'] || 0, icon: FiShield },
+            { id: 'ai-ml', label: 'AI & Machine Learning', count: categoryMap['ai-ml'] || 0, icon: FiCpu },
+            { id: 'mobile-development', label: 'Mobile Development', count: categoryMap['mobile-development'] || 0, icon: FiSmartphone },
+            { id: 'web-development', label: 'Web Development', count: categoryMap['web-development'] || 0, icon: FiCode },
+            { id: 'cloud-solutions', label: 'Cloud Solutions', count: categoryMap['cloud-solutions'] || 0, icon: FiCloud }
+          ].filter(cat => cat.id === 'all' || cat.count > 0); // Only show categories with projects
 
-        setCategories(generatedCategories);
+          setCategories(generatedCategories);
+        } else {
+          setError(data.message || 'Failed to fetch projects');
+        }
+        
+        // Fetch testimonials
+        const testimonialsResponse = await fetch('http://localhost:5000/api/testimonials?featured=true&limit=6');
+        const testimonialsData = await testimonialsResponse.json();
+        
+        if (testimonialsData.success) {
+          setTestimonials(testimonialsData.data || []);
+        }
+        
+      } catch (err) {
+        setError('Failed to load portfolio data');
+        console.error('Portfolio fetch error:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError('Failed to load portfolio');
-      console.error('Portfolio fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchPortfolioData();
+  }, []);
 
   const filteredProjects = activeFilter === 'all' 
     ? projects 
     : projects.filter(project => project.category === activeFilter);
 
+  const getCategoryIcon = (category) => {
+    const icons = {
+      'cybersecurity': FiShield,
+      'ai-ml': FiCpu,
+      'mobile-development': FiSmartphone,
+      'web-development': FiCode,
+      'cloud-solutions': FiCloud
+    };
+    return icons[category] || FiCode;
+  };
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      'cybersecurity': 'from-red-500 to-pink-500',
+      'ai-ml': 'from-purple-500 to-blue-500',
+      'mobile-development': 'from-green-500 to-teal-500',
+      'web-development': 'from-blue-500 to-cyan-500',
+      'cloud-solutions': 'from-orange-500 to-yellow-500'
+    };
+    return colors[category] || 'from-blue-400/60 to-gray-400/60';
+  };
+
   const stats = [
-    { number: '50+', label: 'Projects Completed' },
-    { number: '100%', label: 'Client Satisfaction' },
-    { number: '99.9%', label: 'Success Rate' },
-    { number: '24/7', label: 'Support Available' }
+    { number: '50+', label: 'Projects Completed', icon: FiAward },
+    { number: '100%', label: 'Client Satisfaction', icon: FiStar },
+    { number: '99.9%', label: 'Success Rate', icon: FiCheck },
+    { number: '24/7', label: 'Support Available', icon: FiZap }
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900">
+        <div className="text-center">
+          <div className="rounded-full h-32 w-32 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-dark-600 dark:text-dark-300 text-lg">Loading Portfolio...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Portfolio</h2>
           <p className="text-dark-600 dark:text-dark-300 mb-4">{error}</p>
           <button 
-            onClick={fetchPortfolio}
-            className="btn-primary"
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors duration-300"
           >
             Try Again
           </button>
@@ -98,225 +158,297 @@ const Portfolio = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-50 via-primary-50 to-cyber-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 via-cyber-600 to-primary-700 text-white section-padding hero-glow particle-bg">
-        <div className="container-custom text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-4xl sm:text-5xl font-bold mb-6 text-glow">Our Portfolio</h1>
-            <p className="text-lg sm:text-xl text-primary-100 max-w-3xl mx-auto">
-              Showcasing our successful projects that have helped businesses transform their digital presence and achieve their goals.
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900">
+      {/* Enhanced Hero Section */}
+      <section className="relative text-white section-padding hero-glow particle-bg overflow-hidden bg-gradient-to-br from-gray-100 via-blue-50 to-gray-100">
+        {/* Hero Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src={heroImage} 
+            alt="Portfolio Projects" 
+            className="w-full h-full object-cover object-center"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/60 via-blue-900/40 to-gray-900/60"></div>
+        </div>
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-gray-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-gray-400/10 to-blue-400/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container-custom text-center relative z-10">
+          <div>
+            <div className="inline-flex items-center px-4 py-2 rounded-full mb-6">
+              <FiZap className="w-4 h-4 mr-2 text-cyber-400" />
+              <span className="text-sm font-medium text-gray-100">We Engineer Beyond Magic</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 break-words">
+              Our <span className="bg-gradient-to-r from-blue-200 via-gray-100 to-blue-200 bg-clip-text text-transparent force-gradient break-words">Portfolio</span>
+            </h1>
+            <p className="text-lg sm:text-xl lg:text-2xl text-gray-100 max-w-4xl mx-auto leading-relaxed">
+              Showcasing our successful <span className="font-semibold text-cyber-300">AI, cybersecurity, and software development</span> projects 
+              that have helped businesses transform their digital presence and achieve remarkable results.
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="bg-gradient-to-br from-white via-primary-50 to-cyber-50 dark:from-dark-800 dark:via-dark-700 dark:to-dark-800 py-12 sm:py-16 cyber-grid-bg">
-        <div className="container-custom">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+      {/* Enhanced Stats Section */}
+      <section className="section-padding -mt-8 relative z-20 overflow-hidden">
+        <div className="absolute inset-0 opacity-5 dark:opacity-10">
+          <img 
+            src={techCodeImage} 
+            alt="Technology Background" 
+            className="w-full h-full object-cover object-center"
+            loading="lazy"
+          />
+        </div>
+        <div className="container-custom relative z-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center glow-card p-4 sm:p-6 floating-element"
-              >
-                <div className="text-2xl sm:text-3xl font-bold text-primary-600 dark:text-primary-400 mb-2 text-glow">
+              <div key={stat.label} className="text-center p-6 floating-element">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-400/60 to-gray-400/60 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-2xl lg:text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                   {stat.number}
                 </div>
-                <div className="text-dark-600 dark:text-dark-300 text-xs sm:text-sm font-medium">
+                <div className="text-dark-600 dark:text-dark-300 font-medium text-sm">
                   {stat.label}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Filter Section */}
-      <section className="section-padding bg-gradient-to-br from-dark-50 via-primary-50 to-cyber-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900 particle-bg">
-        <div className="container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
+      {/* Enhanced Filter Section */}
+      <section className="section-padding relative bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900 particle-bg overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <img 
+            src={aiProfessionalImage} 
+            alt="Professional Background" 
+            className="w-full h-full object-cover object-center"
+            loading="lazy"
+          />
+        </div>
+        <div className="container-custom relative z-10">
+          <div
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-dark-900 dark:text-white mb-4">
-              Featured <span className="gradient-text">Projects</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-dark-900 dark:text-white mb-6 break-words">
+              Featured <span className="gradient-text break-words">Projects</span>
             </h2>
             <p className="text-lg sm:text-xl text-dark-600 dark:text-dark-300 max-w-3xl mx-auto mb-8">
-              Real-world solutions that demonstrate our expertise across different industries and technologies
+              Real-world solutions that demonstrate our expertise across different industries and cutting-edge technologies
             </p>
 
-            {/* Filter Buttons */}
+            {/* Enhanced Filter Buttons */}
             {categories.length > 0 && (
               <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setActiveFilter(category.id)}
-                    className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 ${
-                      activeFilter === category.id
-                        ? 'bg-primary-600 text-white shadow-lg'
-                        : 'bg-white/80 dark:bg-dark-800/80 text-dark-600 dark:text-dark-300 hover:bg-primary-50 dark:hover:bg-dark-700'
-                    }`}
-                ))}
+                {categories.map((category) => {
+                  const CategoryIcon = category.icon;
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setActiveFilter(category.id)}
+                      className={`flex items-center px-5 sm:px-6 py-3 sm:py-4 rounded-xl font-medium duration-300 ${
+                        activeFilter === category.id
+                          ? 'bg-gradient-to-r from-blue-400 to-gray-400 text-white shadow-lg shadow-primary-500/25'
+                          : 'bg-transparent text-dark-600 dark:text-dark-300 hover:bg-primary-50 dark:hover:bg-dark-700 border border-dark-200/50 dark:border-dark-600/50'
+                      }`}>
+                      <CategoryIcon className="w-4 h-4 mr-2" />
+                      {category.label} 
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                        activeFilter === category.id 
+                          ? 'bg-white/20 text-white' 
+                          : 'bg-primary-100 dark:bg-primary-900/30 text-blue-600 dark:text-blue-400'
+                      }`}>
+                        {category.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
-          </motion.div>
+          </div>
 
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            {filteredProjects.map((project, index) => (
-              <motion.div
-                key={project._id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="glow-container p-6 sm:p-8 hover:shadow-xl transition-all duration-300 floating-element group"
-              >
-                {/* Project Image */}
-                <div className="relative overflow-hidden rounded-lg mb-6">
-                  {project.images && project.images.length > 0 ? (
-                    <img 
-                      src={project.images[0].url} 
-                      alt={project.title}
-                      className="w-full h-48 sm:h-64 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-48 sm:h-64 bg-gradient-to-br from-primary-100 via-cyber-100 to-primary-200 dark:from-primary-900/20 dark:via-cyber-900/20 dark:to-primary-900/20 flex items-center justify-center glow-card">
-                      {project.category === 'security' ? (
-                        <FiShield className="w-12 sm:w-16 h-12 sm:h-16 text-primary-600 dark:text-primary-400 glow-icon" />
-                      ) : (
-                        <FiCode className="w-12 sm:w-16 h-12 sm:h-16 text-primary-600 dark:text-primary-400 glow-icon" />
-                      )}
-                    </div>
-                  )}
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-                      project.category === 'security' 
-                        ? 'bg-red-100/90 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-                        : project.category === 'development'
-                        ? 'bg-blue-100/90 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                        : 'bg-green-100/90 text-green-700 dark:bg-green-900/40 dark:text-green-300'
-                    }`}>
-                      {project.category.charAt(0).toUpperCase() + project.category.slice(1)}
-                    </span>
-                    {project.featured && (
-                      <span className="px-2 sm:px-3 py-1 bg-yellow-100/90 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 rounded-full text-xs font-medium backdrop-blur-sm">
-                        Featured
+          {/* Enhanced Projects Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
+            {filteredProjects.map((project, index) => {
+              const CategoryIcon = getCategoryIcon(project.category);
+              const categoryColor = getCategoryColor(project.category);
+              
+              return (
+                <div key={project._id} className="p-6 sm:p-8 hover:shadow-2xl duration-500 floating-element group cursor-pointer">
+                  {/* Project Image */}
+                  <div className="relative overflow-hidden rounded-xl mb-6">
+                    {project.images && project.images.length > 0 ? (
+                      <img 
+                        src={project.images[0].url} 
+                        alt={project.title}
+                        className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 duration-500"
+                      />
+                    ) : (
+                      <div className={`w-full h-48 sm:h-56 bg-gradient-to-br ${categoryColor} flex items-center justify-center group-hover:scale-105 duration-500`}>
+                        <CategoryIcon className="w-16 h-16 text-white" />
+                      </div>
+                    )}
+                    
+                    {/* Project Badges */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        project.category === 'cybersecurity' 
+                          ? 'bg-red-100/90 text-red-700 dark:bg-red-900/40 dark:text-red-300 border-red-200/50'
+                          : project.category === 'ai-ml'
+                          ? 'bg-purple-100/90 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-purple-200/50'
+                          : project.category === 'mobile-development'
+                          ? 'bg-green-100/90 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-green-200/50'
+                          : 'bg-blue-100/90 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-200/50'
+                      }`}>
+                        {project.category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       </span>
-                    )}
-                  </div>
-                </div>
+                      {project.featured && (
+                        <span className="px-3 py-1 bg-yellow-100/90 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 rounded-full text-xs font-medium border border-yellow-200/50 flex items-center">
+                          <FiStar className="w-3 h-3 mr-1" />
+                          Featured
+                        </span>
+                      )}
+                    </div>
 
-                {/* Project Content */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-dark-900 dark:text-white mb-2">
-                      {project.title}
-                    </h3>
-                    {project.client && (
-                      <p className="text-dark-600 dark:text-dark-300 text-sm font-medium mb-3">
-                        Client: {project.client.name} • Duration: {project.duration || 'N/A'}
+                    {/* Project Stats */}
+                    <div className="absolute bottom-4 left-4 flex items-center space-x-3 text-white text-xs">
+                      {project.analytics && (
+                        <>
+                          <span className="flex items-center bg-black/30 px-2 py-1 rounded-full">
+                            <FiEye className="w-3 h-3 mr-1" />
+                            {project.analytics.views}
+                          </span>
+                          <span className="flex items-center bg-black/30 px-2 py-1 rounded-full">
+                            <FiStar className="w-3 h-3 mr-1" />
+                            {project.analytics.likes}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Project Content */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-dark-900 dark:text-white mb-3 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors duration-300">
+                        {project.title}
+                      </h3>
+                      
+                      {project.client && (
+                        <div className="flex items-center space-x-4 text-sm text-dark-600 dark:text-dark-300 mb-3">
+                          <span className="flex items-center">
+                            <FiUser className="w-4 h-4 mr-1" />
+                            {project.client.name}
+                          </span>
+                          <span className="flex items-center">
+                            <FiCalendar className="w-4 h-4 mr-1" />
+                            {project.duration}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <p className="text-dark-600 dark:text-dark-300 leading-relaxed">
+                        {project.description}
                       </p>
-                    )}
-                    <p className="text-dark-600 dark:text-dark-300 mb-4 text-sm sm:text-base">
-                      {project.description}
-                    </p>
-                  </div>
-
-                  {/* Technologies */}
-                  {project.technologies && project.technologies.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {project.technologies.slice(0, 6).map((tech) => (
-                        <span
-                          key={tech}
-                          className="px-2 py-1 bg-primary-100/80 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded text-xs backdrop-blur-sm"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                      {project.technologies.length > 6 && (
-                        <span className="px-2 py-1 bg-dark-100/80 dark:bg-dark-700/80 text-dark-600 dark:text-dark-400 rounded text-xs backdrop-blur-sm">
-                          +{project.technologies.length - 6} more
-                        </span>
-                      )}
                     </div>
-                  )}
 
-                  {/* Key Features */}
-                  {project.features && project.features.length > 0 && (
-                    <div className="space-y-2 mb-6">
-                      <h4 className="font-semibold text-dark-900 dark:text-white text-sm">Key Features:</h4>
-                      <ul className="space-y-1">
-                        {project.features.slice(0, 3).map((feature, idx) => (
-                          <li key={idx} className="flex items-center space-x-2 text-sm text-dark-600 dark:text-dark-300">
-                            <FiCheck className="w-4 h-4 text-cyber-500 flex-shrink-0 glow-icon" />
-                            <span>{feature}</span>
-                          </li>
+                    {/* Technologies */}
+                    {project.technologies && project.technologies.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {project.technologies.slice(0, 5).map((tech) => (
+                          <span
+                            key={tech}
+                            className="px-3 py-1 bg-blue-50/80 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 rounded-lg text-xs border border-blue-100/40 dark:border-blue-700/20"
+                          >
+                            {tech}
+                          </span>
                         ))}
-                      </ul>
-                    </div>
-                  )}
+                        {project.technologies.length > 5 && (
+                          <span className="px-3 py-1 bg-dark-100/80 dark:bg-dark-700/80 text-dark-600 dark:text-dark-400 rounded-lg text-xs border border-dark-200/50">
+                            +{project.technologies.length - 5}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Project Links */}
-                  <div className="flex items-center justify-between pt-4 border-t border-dark-200/50 dark:border-dark-600/50">
-                    <div className="flex space-x-4">
-                      {project.liveUrl && (
-                        <a
-                          href={project.liveUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200 glow-icon"
-                          title="View Live Project"
+                    {/* Key Features */}
+                    {project.features && project.features.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-dark-900 dark:text-white text-sm">Key Features:</h4>
+                        <ul className="space-y-2">
+                          {project.features.slice(0, 3).map((feature, idx) => (
+                            <li 
+                              key={idx}
+                              className="flex items-center space-x-3 text-sm text-dark-600 dark:text-dark-300"
+                            >
+                              <div className="w-5 h-5 bg-gradient-to-br from-blue-400/60 to-gray-400/60 rounded-full flex items-center justify-center flex-shrink-0">
+                                <FiCheck className="w-3 h-3 text-white" />
+                              </div>
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Project Links */}
+                    <div className="flex items-center justify-between pt-4 border-t border-dark-200/50 dark:border-dark-600/50">
+                      <div className="flex space-x-3">
+                        {project.liveUrl && (
+                          <a
+                            href={project.liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-10 h-10 bg-gradient-to-br from-blue-400/60 to-gray-400/60 rounded-lg flex items-center justify-center text-white hover:shadow-lg hover:shadow-primary-500/25 duration-300"
+                            title="View Live Project"
+                          >
+                            <FiExternalLink className="w-5 h-5" />
+                          </a>
+                        )}
+                        {project.githubUrl && (
+                          <a
+                            href={project.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-10 h-10 bg-gradient-to-br from-blue-400/60 to-gray-400/60 rounded-lg flex items-center justify-center text-white hover:shadow-lg hover:shadow-primary-500/25 duration-300"
+                            title="View Source Code"
+                          >
+                            <FiGithub className="w-5 h-5" />
+                          </a>
+                        )}
+                      </div>
+                      <div>
+                        <Link 
+                          to={`/portfolio/${project.seo.slug}`} 
+                          className="inline-flex items-center px-4 py-2 border-2 border-blue-300/40 text-white font-semibold rounded-lg hover:bg-transparent hover:border-blue-400 text-sm"
                         >
-                          <FiExternalLink className="w-5 h-5" />
-                        </a>
-                      )}
-                      {project.githubUrl && (
-                        <a
-                          href={project.githubUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors duration-200 glow-icon"
-                          title="View Source Code"
-                        >
-                          <FiGithub className="w-5 h-5" />
-                        </a>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {project.analytics && project.analytics.views > 0 && (
-                        <span className="text-xs text-dark-500 dark:text-dark-400">
-                          {project.analytics.views} views
-                        </span>
-                      )}
-                      <Link to={`/portfolio/${project.seo.slug}`} className="btn-primary text-sm">
-                        Learn More
-                      </Link>
+                          View Details
+                          <FiArrowRight className="ml-2 w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
 
           {filteredProjects.length === 0 && (
             <div className="text-center py-16">
-              <div className="glow-card p-8 max-w-md mx-auto">
-                <p className="text-dark-600 dark:text-dark-300 text-lg">
-                  No projects found in this category.
+              <div className="p-8 max-w-md mx-auto">
+                <FiFilter className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-dark-900 dark:text-white mb-2">No Projects Found</h3>
+                <p className="text-dark-600 dark:text-dark-300">
+                  No projects match the selected filter. Try choosing a different category.
                 </p>
               </div>
             </div>
@@ -324,102 +456,86 @@ const Portfolio = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="section-padding bg-gradient-to-br from-white via-primary-50 to-cyber-50 dark:from-dark-800 dark:via-dark-700 dark:to-dark-800 cyber-grid-bg">
-        <div className="container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
+      {/* Enhanced Testimonials Section */}
+      <section className="section-padding relative bg-gradient-to-br from-white via-blue-50/20 to-white dark:from-dark-800 dark:via-dark-700 dark:to-dark-800 cyber-grid-bg overflow-hidden">
+        <div className="absolute inset-0 opacity-5 dark:opacity-10">
+          <img 
+            src={devImage} 
+            alt="Development Background" 
+            className="w-full h-full object-cover object-center"
+            loading="lazy"
+          />
+        </div>
+        <div className="container-custom relative z-10">
+          <div
             className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-dark-900 dark:text-white mb-4">
-              What Our <span className="gradient-text">Clients Say</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-dark-900 dark:text-white mb-4 break-words">
+              Client <span className="gradient-text break-words">Testimonials</span>
             </h2>
-            <p className="text-lg sm:text-xl text-dark-600 dark:text-dark-300 max-w-3xl mx-auto">
-              Trusted by businesses worldwide for our expertise and results
+            <p className="text-lg sm:text-xl text-dark-600 dark:text-dark-300 max-w-3xl mx-auto mb-8">
+              Hear what our clients say about working with us and the results we've delivered
             </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {[
-              {
-                quote: "TheWizarDs transformed our digital presence completely. Their expertise in both development and security is unmatched.",
-                author: "Sarah Johnson",
-                role: "CTO, TechMart Inc.",
-                rating: 5
-              },
-              {
-                quote: "Outstanding work on our web platform. The team delivered a secure, scalable solution that exceeded our expectations.",
-                author: "Michael Chen",
-                role: "CEO, InvestPro",
-                rating: 5
-              },
-              {
-                quote: "Professional, knowledgeable, and results-driven. TheWizarDs helped us achieve our goals ahead of schedule.",
-                author: "Emily Rodriguez",
-                role: "Director, SecureBank",
-                rating: 5
-              }
-            ].map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="glow-card p-6 sm:p-8 floating-element"
-              >
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <FiStar key={i} className="w-4 sm:w-5 h-4 sm:h-5 text-yellow-400 fill-current glow-icon" />
-                  ))}
-                </div>
-                <p className="text-dark-600 dark:text-dark-300 mb-6 italic text-sm sm:text-base">
-                  "{testimonial.quote}"
-                </p>
-                <div>
-                  <div className="font-semibold text-dark-900 dark:text-white text-sm sm:text-base">
-                    {testimonial.author}
-                  </div>
-                  <div className="text-dark-600 dark:text-dark-300 text-xs sm:text-sm">
-                    {testimonial.role}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            
+            <Link
+              to="/client/testimonial"
+              className="inline-flex items-center px-6 py-3 border-2 border-blue-300/40 text-white font-semibold rounded-xl hover:bg-transparent hover:border-blue-400"
+            >
+              <FiAward className="w-5 h-5 mr-2" />
+              Share Your Experience
+            </Link>
           </div>
+
+          {testimonials.length === 0 ? (
+            <div className="text-center p-12 max-w-2xl mx-auto">
+              <FiAward className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-dark-900 dark:text-white mb-2">No Testimonials Yet</h3>
+              <p className="text-dark-600 dark:text-dark-300 mb-6">
+                Be the first to share your experience working with us!
+              </p>
+              <Link
+                to="/client/testimonial"
+                className="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors"
+              >
+                <FiAward className="w-5 h-5 mr-2" />
+                Submit Testimonial
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {testimonials.map((testimonial, index) => (
+                <div key={testimonial._id} className="p-6 sm:p-8 floating-element group hover:shadow-xl duration-300">
+                  <div className="flex mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <FiStar key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-dark-600 dark:text-dark-300 mb-6 italic leading-relaxed">
+                    "{testimonial.testimonial}"
+                  </p>
+                  <div className="border-t border-dark-200/50 dark:border-dark-600/50 pt-4">
+                    <div className="font-semibold text-dark-900 dark:text-white text-lg">
+                      {testimonial.clientName}
+                    </div>
+                    {testimonial.role && (
+                      <div className="text-dark-600 dark:text-dark-300 text-sm mb-2">
+                        {testimonial.role}{testimonial.company && `, ${testimonial.company}`}
+                      </div>
+                    )}
+                    {testimonial.projectName && (
+                      <div className="text-blue-600 dark:text-blue-400 text-xs font-medium">
+                        Project: {testimonial.projectName}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="section-padding bg-gradient-to-br from-primary-600 via-cyber-600 to-primary-700 text-white hero-glow particle-bg">
-        <div className="container-custom text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-glow">
-              Ready to Start Your Project?
-            </h2>
-            <p className="text-lg sm:text-xl mb-6 sm:mb-8 text-primary-100">
-              Let's discuss how we can help transform your digital presence with our proven expertise.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <a href="/contact" className="glow-button">
-                Start Your Project
-              </a>
-              <a href="/services" className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white/50 text-white font-semibold rounded-lg hover:border-white hover:bg-white/10 transition-all duration-300 glow-card">
-                Our Services
-              </a>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <CallToAction />
     </div>
   );
 };
